@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE PICKLE CLASSIC — Office Betting Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;600;700&family=Special+Elite&display=swap');
+  :root {
+    --gold:#f5c518; --red:#c0392b; --green:#27ae60;
+    --dark:#0a0a0a; --darker:#050505; --panel:#111;
+    --border:#2a2a2a; --text:#e8e0d0; --muted:#888; --cream:#f0e6c8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--darker);color:var(--text);font-family:'Oswald',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1000;}
+
+  /* TICKER */
+  .ticker-wrap{background:var(--gold);color:var(--dark);overflow:hidden;white-space:nowrap;padding:6px 0;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:14px;}
+  .ticker-track{display:flex;width:max-content;animation:ticker 40s linear infinite;}
+  .ticker-track span{margin:0 40px;}
+  @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+  /* COUNTDOWN */
+  .countdown-bar{background:#0d0d0d;border-bottom:1px solid var(--border);padding:14px 20px;text-align:center;}
+  .countdown-label{font-size:10px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .countdown-digits{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,5vw,48px);letter-spacing:6px;color:var(--gold);transition:color .5s;}
+  .countdown-digits span{color:var(--muted);font-size:.5em;margin:0 2px;}
+  .countdown-digits.urgent{color:var(--red);animation:pulse .8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* HEADER */
+  header{text-align:center;padding:40px 20px 24px;border-bottom:3px solid var(--gold);}
+  .broadcast-tag{font-family:'Special Elite',cursive;color:var(--gold);font-size:12px;letter-spacing:6px;text-transform:uppercase;margin-bottom:12px;opacity:.8;}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,8vw,88px);line-height:.9;letter-spacing:4px;color:var(--cream);text-shadow:4px 4px 0 rgba(0,0,0,.5);}
+  h1 em{color:var(--gold);font-style:normal;}
+  .subtitle{font-size:13px;letter-spacing:8px;color:var(--muted);margin-top:14px;text-transform:uppercase;}
+  .live-badge{display:inline-block;background:var(--red);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:3px;padding:3px 10px;margin-top:12px;animation:pulse 1.4s ease-in-out infinite;}
+
+  /* OVERLAYS */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+  .overlay.hidden{display:none;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+
+  /* NAME GATE */
+  .gate-box{background:var(--panel);border:1px solid var(--gold);padding:40px 32px;max-width:420px;width:100%;text-align:center;animation:fadeUp .25s ease;}
+  .gate-icon{font-size:48px;margin-bottom:16px;}
+  .gate-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:4px;color:var(--cream);margin-bottom:6px;}
+  .gate-sub{font-size:12px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:28px;line-height:1.6;}
+  .name-input{width:100%;background:var(--darker);border:1px solid var(--border);color:var(--cream);font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:2px;padding:14px 16px;text-align:center;outline:none;margin-bottom:16px;transition:border-color .2s;}
+  .name-input:focus{border-color:var(--gold);}
+  .name-input::placeholder{color:#444;}
+  .gate-btn{width:100%;background:var(--gold);border:none;color:var(--dark);font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;padding:14px;cursor:pointer;transition:background .15s;}
+  .gate-btn:hover{background:#e6b800;}
+  .gate-error{color:var(--red);font-size:12px;letter-spacing:2px;margin-top:10px;min-height:18px;}
+
+  /* MAIN */
+  .main{max-width:960px;margin:0 auto;padding:32px 16px 80px;}
+
+  /* BETTOR BADGE */
+  .bettor-badge{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);padding:12px 18px;margin-bottom:32px;gap:12px;flex-wrap:wrap;}
+  .bettor-left{display:flex;flex-direction:column;gap:2px;}
+  .bettor-label{font-size:10px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;}
+  .bettor-name-val{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);}
+  .change-name-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;padding:7px 14px;cursor:pointer;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+  .change-name-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* MATCHUP */
+  .matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;margin-bottom:40px;}
+  .fighter{background:var(--panel);border:1px solid var(--border);padding:24px 20px;text-align:center;transition:border-color .2s;}
+  .fighter:hover{border-color:var(--gold);}
+  .fighter-label{font-size:10px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+  .fighter-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(26px,4vw,46px);line-height:1;color:var(--cream);letter-spacing:2px;}
+  .fighter-odds{margin-top:12px;font-size:32px;font-family:'Bebas Neue',sans-serif;color:var(--gold);letter-spacing:2px;}
+  .odds-label{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px;}
+  .vs-block{text-align:center;}
+  .vs-text{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--red);line-height:1;text-shadow:2px 2px 0 rgba(0,0,0,.4);}
+  .vs-divider{width:2px;height:80px;background:linear-gradient(to bottom,transparent,var(--border),transparent);margin:8px auto;}
+
+  /* SECTION HEADERS */
+  .section-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;margin-top:40px;}
+  .section-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--cream);white-space:nowrap;}
+  .section-line{flex:1;height:1px;background:var(--border);}
+  .section-tag{font-size:10px;letter-spacing:4px;color:var(--gold);text-transform:uppercase;white-space:nowrap;}
+
+  /* ODDS TABLE */
+  .odds-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);}
+  .odds-table thead tr{background:#1a1a1a;border-bottom:2px solid var(--gold);}
+  .odds-table th{padding:12px 16px;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);text-align:left;}
+  .odds-table td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:14px;font-weight:300;vertical-align:middle;}
+  .odds-table tr:last-child td{border-bottom:none;}
+  .odds-table tr:hover td{background:rgba(255,255,255,.02);}
+  .bet-label{font-weight:600;color:var(--cream);line-height:1.3;}
+  .bet-sub{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+  .odds-value{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;}
+  .odds-pos{color:var(--green);}
+  .odds-neg{color:var(--red);}
+  .odds-even{color:var(--gold);}
+  .pick-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:6px 14px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .pick-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(245,197,24,.05);}
+  .pick-btn.picked{border-color:var(--gold);background:var(--gold);color:var(--dark);font-weight:700;}
+  .group-divider td{border-top:2px solid #1e1e1e !important;}
+  .col-selection{}
+  .result-won td{background:rgba(39,174,96,.07) !important;}
+  .result-lost td{background:rgba(192,57,43,.06) !important;}
+  .result-badge{display:inline-block;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;padding:2px 7px;margin-left:8px;vertical-align:middle;}
+  .result-badge.won{background:var(--green);color:#fff;}
+  .result-badge.lost{background:var(--red);color:#fff;}
+
+  /* PROPS GRID */
+  .props-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .prop-card{background:var(--panel);border:1px solid var(--border);padding:18px 16px;transition:border-color .2s;}
+  .prop-card:hover{border-color:rgba(245,197,24,.35);}
+  .prop-card.result-won{border-color:rgba(39,174,96,.5) !important;}
+  .prop-card.result-lost{border-color:rgba(192,57,43,.3) !important;}
+  .prop-number{font-size:10px;letter-spacing:4px;color:var(--red);margin-bottom:6px;font-family:'Special Elite',cursive;}
+  .prop-title{font-size:13px;font-weight:600;color:var(--cream);margin-bottom:14px;line-height:1.45;min-height:38px;}
+  .prop-options{display:flex;gap:8px;}
+  .prop-option{flex:1;background:transparent;border:1px solid var(--border);padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s;font-family:'Oswald',sans-serif;}
+  .prop-option:hover{border-color:var(--gold);}
+  .prop-option.picked{border-color:var(--gold);background:rgba(245,197,24,.1);}
+  .prop-option.winner{border-color:var(--green) !important;background:rgba(39,174,96,.15) !important;}
+  .prop-option.loser{border-color:#2a2a2a !important;opacity:.35;}
+  .prop-option-name{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:4px;}
+  .prop-option-odds{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;display:block;}
+
+  /* BETSLIP */
+  .betslip{background:var(--panel);border:1px solid var(--gold);padding:24px;}
+  .betslip-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+  .betslip-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);}
+  .betslip-count{font-size:12px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+  .empty-slip{text-align:center;padding:20px;color:#555;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-style:italic;}
+  .slip-items{margin-bottom:4px;}
+  .slip-item{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;gap:10px;}
+  .slip-item-name{color:var(--cream);flex:1;line-height:1.3;}
+  .slip-item-pts{font-size:10px;color:var(--muted);letter-spacing:2px;flex-shrink:0;}
+  .slip-item-odds{font-family:'Bebas Neue',sans-serif;font-size:18px;flex-shrink:0;}
+  .slip-remove{background:none;border:none;color:#444;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;transition:color .15s;flex-shrink:0;}
+  .slip-remove:hover{color:var(--red);}
+  .slip-footer{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--border);margin-top:4px;}
+  .slip-total-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px;}
+  .place-btn{width:100%;background:var(--gold);border:none;color:var(--dark);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;padding:14px;cursor:pointer;margin-top:16px;transition:all .15s;}
+  .place-btn:hover{background:#e6b800;transform:translateY(-1px);}
+  .place-btn:disabled{background:#222;color:#444;cursor:not-allowed;transform:none;}
+
+  /* CONFIRM */
+  .confirm-box{background:var(--panel);border:1px solid var(--gold);padding:36px 28px;max-width:520px;width:100%;text-align:center;animation:fadeUp .25s ease;}
+  .confirm-icon{font-size:48px;margin-bottom:10px;}
+  .confirm-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:4px;color:var(--gold);}
+  .confirm-meta{font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin:6px 0 20px;}
+  .confirm-meta strong{color:var(--cream);font-weight:600;}
+  .confirm-picks{text-align:left;background:var(--darker);border:1px solid var(--border);padding:14px 16px;margin-bottom:22px;max-height:280px;overflow-y:auto;}
+  .confirm-pick-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px;}
+  .confirm-pick-row:last-child{border-bottom:none;}
+  .confirm-pick-name{color:var(--cream);flex:1;}
+  .confirm-pick-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .confirm-pick-pts{font-size:11px;color:var(--muted);letter-spacing:2px;}
+  .confirm-pick-odds{font-family:'Bebas Neue',sans-serif;font-size:18px;}
+  .confirm-actions{display:flex;gap:12px;}
+  .confirm-back{flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;padding:12px;cursor:pointer;transition:all .15s;}
+  .confirm-back:hover{border-color:var(--muted);color:var(--cream);}
+  .confirm-submit{flex:2;background:var(--gold);border:none;color:var(--dark);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;padding:12px;cursor:pointer;transition:background .15s;}
+  .confirm-submit:hover{background:#e6b800;}
+  .confirm-submit:disabled{background:#555;color:#888;cursor:not-allowed;}
+
+  /* SUCCESS BANNER */
+  .success-banner{position:fixed;top:0;left:0;right:0;background:var(--green);color:#fff;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;padding:14px 20px;z-index:800;animation:slideDown .3s ease;}
+
+  /* LEADERBOARD */
+  .lb-status{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+  .lb-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;flex-shrink:0;}
+  .lb-dot.stale{background:#555;animation:none;}
+  .leaderboard-empty{text-align:center;padding:32px;color:#333;font-size:12px;letter-spacing:4px;text-transform:uppercase;border:1px dashed var(--border);}
+  .leaderboard-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);}
+  .leaderboard-table thead tr{background:#1a1a1a;border-bottom:2px solid var(--gold);}
+  .leaderboard-table th{padding:10px 14px;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);text-align:left;}
+  .leaderboard-table td{padding:14px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .leaderboard-table tr:last-child td{border-bottom:none;}
+  .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#333;width:44px;vertical-align:middle !important;}
+  .lb-rank.r1{color:var(--gold);}
+  .lb-rank.r2{color:#bbb;}
+  .lb-rank.r3{color:#cd7f32;}
+  .lb-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--cream);}
+  .lb-time{font-size:11px;color:#444;letter-spacing:2px;margin-top:3px;}
+  .lb-picks-list{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.65;max-height:52px;overflow:hidden;position:relative;}
+  .lb-picks-list::after{content:'';position:absolute;bottom:0;left:0;right:0;height:20px;background:linear-gradient(transparent,var(--panel));pointer-events:none;}
+  .lb-score-col{text-align:right;vertical-align:middle !important;padding-right:16px !important;}
+  .lb-score{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:1px;}
+  .lb-score-label{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+  .lb-new{animation:flashRow 1.5s ease;}
+  @keyframes flashRow{0%{background:rgba(39,174,96,.2)}100%{background:transparent}}
+
+  /* ADMIN */
+  .admin-box{background:var(--panel);border:1px solid var(--red);padding:36px 28px;max-width:700px;width:100%;animation:fadeUp .25s ease;max-height:88vh;overflow-y:auto;}
+  .admin-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--red);margin-bottom:4px;}
+  .admin-sub{font-size:11px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:24px;}
+  .admin-section-label{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .admin-bet-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #181818;gap:12px;flex-wrap:wrap;}
+  .admin-bet-name{flex:1;font-size:13px;color:var(--cream);min-width:160px;line-height:1.4;}
+  .admin-bet-pts{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--muted);white-space:nowrap;min-width:36px;}
+  .admin-toggles{display:flex;gap:6px;flex-shrink:0;}
+  .admin-tog{border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;padding:5px 11px;cursor:pointer;transition:all .15s;text-transform:uppercase;}
+  .admin-tog:hover{border-color:var(--muted);}
+  .admin-tog.won{border-color:var(--green);background:rgba(39,174,96,.15);color:var(--green);}
+  .admin-tog.lost{border-color:var(--red);background:rgba(192,57,43,.12);color:var(--red);}
+  .admin-save-btn{width:100%;background:var(--red);border:none;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;padding:14px;cursor:pointer;margin-top:20px;transition:background .15s;}
+  .admin-save-btn:hover{background:#a93226;}
+  .admin-save-btn:disabled{background:#555;cursor:not-allowed;}
+  .admin-close-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;padding:12px;cursor:pointer;margin-top:8px;transition:all .15s;}
+  .admin-close-btn:hover{border-color:var(--muted);color:var(--cream);}
+  .admin-trigger{position:fixed;bottom:20px;right:20px;background:var(--darker);border:1px solid #222;color:#2a2a2a;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;z-index:200;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+  .admin-trigger:hover{border-color:#444;color:#555;}
+
+  /* DISCLAIMER */
+  .disclaimer{text-align:center;margin-top:48px;padding-top:20px;border-top:1px solid var(--border);font-size:11px;letter-spacing:2px;color:#3a3a3a;text-transform:uppercase;line-height:2.2;}
+
+  @media(max-width:600px){
+    .matchup{grid-template-columns:1fr;}.vs-divider{display:none;}.vs-block{order:-1;}
+    .props-grid{grid-template-columns:1fr;}.bettor-badge{flex-direction:column;align-items:flex-start;}
+    .col-selection{display:none;}.admin-bet-row{flex-direction:column;align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAME GATE -->
+<div class="overlay" id="nameGate">
+  <div class="gate-box">
+    <div class="gate-icon">🏓</div>
+    <div class="gate-title">Place Your Bets</div>
+    <div class="gate-sub" id="gateSub">Enter your name to open the board</div>
+    <input class="name-input" id="nameInput" type="text" placeholder="YOUR NAME" maxlength="30" autocomplete="off"/>
+    <button class="gate-btn" id="nameSubmit">Enter The Book</button>
+    <div class="gate-error" id="nameError"></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="overlay hidden" id="confirmScreen">
+  <div class="confirm-box">
+    <div class="confirm-icon">📋</div>
+    <div class="confirm-title">Lock It In?</div>
+    <div class="confirm-meta" id="confirmMeta"></div>
+    <div class="confirm-picks" id="confirmPicks"></div>
+    <div class="confirm-actions">
+      <button class="confirm-back" id="confirmBack">← Back</button>
+      <button class="confirm-submit" id="confirmSubmit">Lock In Picks</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PASSWORD GATE -->
+<div class="overlay hidden" id="adminGate">
+  <div class="gate-box">
+    <div class="gate-icon">⚡</div>
+    <div class="gate-title">Admin Access</div>
+    <div class="gate-sub">Enter password to open results panel</div>
+    <input class="name-input" id="adminPwInput" type="password" placeholder="PASSWORD" autocomplete="off"/>
+    <button class="gate-btn" id="adminPwSubmit" style="background:var(--red);color:#fff;">Open Results Panel</button>
+    <div class="gate-error" id="adminPwError"></div>
+    <button onclick="document.getElementById('adminGate').classList.add('hidden')" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:Oswald,sans-serif;font-size:14px;letter-spacing:3px;padding:10px;cursor:pointer;margin-top:8px;text-transform:uppercase;">Cancel</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="overlay hidden" id="adminPanel">
+  <div class="admin-box">
+    <div class="admin-title">⚡ Results Panel</div>
+    <div class="admin-sub">Mark each bet won or lost — scores update live for everyone</div>
+    <div id="adminBetList"></div>
+    <button class="admin-save-btn" id="adminSave">Save &amp; Push Results</button>
+    <button class="admin-close-btn" id="adminClose">Close</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap"><div class="ticker-track">
+  <span>🏓 OFFICE CHAMPIONSHIP FINAL</span><span>BELLEFLEUR vs WITT — THE GRUDGE MATCH</span>
+  <span>ALL BETS ARE FOR PRIDE ONLY</span><span>🏓 PICKLEBALL FEVER HAS GRIPPED THE OFFICE</span>
+  <span>WHO DINKS, WHO SINKS</span><span>PLACE YOUR BETS BEFORE GAME TIME</span>
+  <span>🏓 OFFICE CHAMPIONSHIP FINAL</span><span>BELLEFLEUR vs WITT — THE GRUDGE MATCH</span>
+  <span>ALL BETS ARE FOR PRIDE ONLY</span><span>🏓 PICKLEBALL FEVER HAS GRIPPED THE OFFICE</span>
+  <span>WHO DINKS, WHO SINKS</span><span>PLACE YOUR BETS BEFORE GAME TIME</span>
+</div></div>
+
+<div class="countdown-bar">
+  <div class="countdown-label">Time Until Match — Friday 6PM</div>
+  <div class="countdown-digits" id="countdown">—</div>
+</div>
+
+<header>
+  <div class="broadcast-tag">★ Office Sports Network Presents ★</div>
+  <h1>THE <em>PICKLE</em><br>CLASSIC</h1>
+  <div class="subtitle">Championship Final · Official Betting Board</div>
+  <div><span class="live-badge">● LINES OPEN</span></div>
+</header>
+
+<div class="main">
+
+  <div class="bettor-badge">
+    <div class="bettor-left">
+      <div class="bettor-label">Betting as</div>
+      <div class="bettor-name-val" id="bettorNameDisplay">—</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="change-name-btn" id="changeNameBtn">Switch Bettor</button>
+      <button class="change-name-btn" id="adminTrigger" style="border-color:#c0392b;color:#c0392b;">⚡ Results Admin</button>
+    </div>
+  </div>
+
+  <div class="matchup">
+    <div class="fighter"><div class="fighter-label">Favourite</div><div class="fighter-name">Mitch<br>Bellefleur</div><div class="fighter-odds">-130</div><div class="odds-label">Moneyline</div></div>
+    <div class="vs-block"><div class="vs-text">VS</div><div class="vs-divider"></div><div class="vs-text">VS</div></div>
+    <div class="fighter"><div class="fighter-label">Underdog</div><div class="fighter-name">Erick<br>Witt</div><div class="fighter-odds">+110</div><div class="odds-label">Moneyline</div></div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Match Lines</span><div class="section-line"></div><span class="section-tag">Main Card</span>
+  </div>
+
+  <table class="odds-table" id="matchLinesTable">
+    <thead><tr><th>Bet</th><th class="col-selection">Selection</th><th>Odds</th><th></th></tr></thead>
+    <tbody>
+      <tr data-bet="Bellefleur to Win"><td><div class="bet-label">Match Winner</div><div class="bet-sub">Mitch Bellefleur</div></td><td class="col-selection">Mitch Bellefleur</td><td><span class="odds-value odds-neg">-130</span></td><td><button class="pick-btn" data-group="match-winner" onclick="togglePick(this,'Bellefleur to Win','-130')">Pick</button></td></tr>
+      <tr data-bet="Witt to Win"><td><div class="bet-label">Match Winner</div><div class="bet-sub">Erick Witt</div></td><td class="col-selection">Erick Witt</td><td><span class="odds-value odds-pos">+110</span></td><td><button class="pick-btn" data-group="match-winner" onclick="togglePick(this,'Witt to Win','+110')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Bellefleur Wins Game 1"><td><div class="bet-label">Game 1 Winner</div><div class="bet-sub">Mitch Bellefleur</div></td><td class="col-selection">Mitch Bellefleur</td><td><span class="odds-value odds-neg">-115</span></td><td><button class="pick-btn" data-group="g1w" onclick="togglePick(this,'Bellefleur Wins Game 1','-115')">Pick</button></td></tr>
+      <tr data-bet="Witt Wins Game 1"><td><div class="bet-label">Game 1 Winner</div><div class="bet-sub">Erick Witt</div></td><td class="col-selection">Erick Witt</td><td><span class="odds-value odds-neg">-105</span></td><td><button class="pick-btn" data-group="g1w" onclick="togglePick(this,'Witt Wins Game 1','-105')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Goes to Deciding Game"><td><div class="bet-label">Goes to Deciding Game</div><div class="bet-sub">Yes — 3 games</div></td><td class="col-selection">Yes — 3 games</td><td><span class="odds-value odds-pos">+140</span></td><td><button class="pick-btn" data-group="deciding" onclick="togglePick(this,'Goes to Deciding Game','+140')">Pick</button></td></tr>
+      <tr data-bet="No Deciding Game"><td><div class="bet-label">Goes to Deciding Game</div><div class="bet-sub">No — straight sets</div></td><td class="col-selection">No — straight sets</td><td><span class="odds-value odds-neg">-165</span></td><td><button class="pick-btn" data-group="deciding" onclick="togglePick(this,'No Deciding Game','-165')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Over 33.5 Total Points"><td><div class="bet-label">Total Combined Points</div><div class="bet-sub">Over 33.5</div></td><td class="col-selection">Over 33.5</td><td><span class="odds-value odds-neg">-110</span></td><td><button class="pick-btn" data-group="tot" onclick="togglePick(this,'Over 33.5 Total Points','-110')">Pick</button></td></tr>
+      <tr data-bet="Under 33.5 Total Points"><td><div class="bet-label">Total Combined Points</div><div class="bet-sub">Under 33.5</div></td><td class="col-selection">Under 33.5</td><td><span class="odds-value odds-neg">-110</span></td><td><button class="pick-btn" data-group="tot" onclick="togglePick(this,'Under 33.5 Total Points','-110')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Game 1 Over 17.5"><td><div class="bet-label">Game 1 Total Points</div><div class="bet-sub">Over 17.5</div></td><td class="col-selection">Over 17.5</td><td><span class="odds-value odds-neg">-115</span></td><td><button class="pick-btn" data-group="g1pts" onclick="togglePick(this,'Game 1 Over 17.5','-115')">Pick</button></td></tr>
+      <tr data-bet="Game 1 Under 17.5"><td><div class="bet-label">Game 1 Total Points</div><div class="bet-sub">Under 17.5</div></td><td class="col-selection">Under 17.5</td><td><span class="odds-value odds-neg">-105</span></td><td><button class="pick-btn" data-group="g1pts" onclick="togglePick(this,'Game 1 Under 17.5','-105')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Game 1 Won by 4+"><td><div class="bet-label">Game 1 Winning Margin</div><div class="bet-sub">Winner by 4+</div></td><td class="col-selection">Winner by 4+</td><td><span class="odds-value odds-neg">-125</span></td><td><button class="pick-btn" data-group="g1m" onclick="togglePick(this,'Game 1 Won by 4+','-125')">Pick</button></td></tr>
+      <tr data-bet="Game 1 Won by 1-3"><td><div class="bet-label">Game 1 Winning Margin</div><div class="bet-sub">Winner by 1–3</div></td><td class="col-selection">Winner by 1–3</td><td><span class="odds-value odds-pos">+105</span></td><td><button class="pick-btn" data-group="g1m" onclick="togglePick(this,'Game 1 Won by 1-3','+105')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="Over 5.5 Aces"><td><div class="bet-label">Aces in Match</div><div class="bet-sub">Over 5.5</div></td><td class="col-selection">Over 5.5</td><td><span class="odds-value odds-pos">+130</span></td><td><button class="pick-btn" data-group="aces" onclick="togglePick(this,'Over 5.5 Aces','+130')">Pick</button></td></tr>
+      <tr data-bet="Under 5.5 Aces"><td><div class="bet-label">Aces in Match</div><div class="bet-sub">Under 5.5</div></td><td class="col-selection">Under 5.5</td><td><span class="odds-value odds-neg">-155</span></td><td><button class="pick-btn" data-group="aces" onclick="togglePick(this,'Under 5.5 Aces','-155')">Pick</button></td></tr>
+      <tr class="group-divider" data-bet="5-Point Run Yes"><td><div class="bet-label">Either Player Goes on 5-Point Run</div><div class="bet-sub">Yes</div></td><td class="col-selection">Yes</td><td><span class="odds-value odds-neg">-175</span></td><td><button class="pick-btn" data-group="run5" onclick="togglePick(this,'5-Point Run Yes','-175')">Pick</button></td></tr>
+      <tr data-bet="5-Point Run No"><td><div class="bet-label">Either Player Goes on 5-Point Run</div><div class="bet-sub">No</div></td><td class="col-selection">No</td><td><span class="odds-value odds-pos">+145</span></td><td><button class="pick-btn" data-group="run5" onclick="togglePick(this,'5-Point Run No','+145')">Pick</button></td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-header">
+    <span class="section-title">Prop Bets</span><div class="section-line"></div><span class="section-tag">Special Markets</span>
+  </div>
+
+  <div class="props-grid" id="propsGrid">
+    <div class="prop-card" data-bet-yes="Fist Pump Yes" data-bet-no="Fist Pump No"><div class="prop-number">PROP #1</div><div class="prop-title">Winner celebrates with a fist pump</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Fist Pump Yes','+115')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+115</span></div><div class="prop-option" onclick="toggleProp(this,'Fist Pump No','-135')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-135</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Witt Knee Story Yes" data-bet-no="Witt Knee Story No"><div class="prop-number">PROP #2</div><div class="prop-title">Erick mentions the high school knee injury unprompted</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Witt Knee Story Yes','-200')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-neg">-200</span></div><div class="prop-option" onclick="toggleProp(this,'Witt Knee Story No','+165')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-pos">+165</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Witt Score Dispute Yes" data-bet-no="Witt Score Dispute No"><div class="prop-number">PROP #3</div><div class="prop-title">Erick disputes the score at any point</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Witt Score Dispute Yes','-160')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-neg">-160</span></div><div class="prop-option" onclick="toggleProp(this,'Witt Score Dispute No','+135')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-pos">+135</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Witt Butt Comment Yes" data-bet-no="Witt Butt Comment No"><div class="prop-number">PROP #4</div><div class="prop-title">Erick makes a butt-related comment during Game 1</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Witt Butt Comment Yes','+180')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+180</span></div><div class="prop-option" onclick="toggleProp(this,'Witt Butt Comment No','-220')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-220</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Bellefleur Lines Quote Yes" data-bet-no="Bellefleur Lines Quote No"><div class="prop-number">PROP #5</div><div class="prop-title">Mitch says "you know you're trying to keep the ball in the lines"</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Bellefleur Lines Quote Yes','+250')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+250</span></div><div class="prop-option" onclick="toggleProp(this,'Bellefleur Lines Quote No','-310')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-310</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Josh Kids These Days Yes" data-bet-no="Josh Kids These Days No"><div class="prop-number">PROP #6</div><div class="prop-title">Josh says "kids these days" at least once</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Josh Kids These Days Yes','-145')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-neg">-145</span></div><div class="prop-option" onclick="toggleProp(this,'Josh Kids These Days No','+120')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-pos">+120</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Score Confusion Standoff Yes" data-bet-no="Score Confusion Standoff No"><div class="prop-number">PROP #7</div><div class="prop-title">Both players argue about what the score is at the same time</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Score Confusion Standoff Yes','-130')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-neg">-130</span></div><div class="prop-option" onclick="toggleProp(this,'Score Confusion Standoff No','+110')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-pos">+110</span></div></div></div>
+    <div class="prop-card" data-bet-yes="GOATed Yes" data-bet-no="GOATed No"><div class="prop-number">PROP #8</div><div class="prop-title">Either player says they're "GOATed" during the match</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'GOATed Yes','+200')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+200</span></div><div class="prop-option" onclick="toggleProp(this,'GOATed No','-250')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-250</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Bellefleur Bagel Yes" data-bet-no="Bellefleur Bagel No"><div class="prop-number">PROP #9</div><div class="prop-title">Mitch wins at least one game 11–0 (the bagel)</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Bellefleur Bagel Yes','+400')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+400</span></div><div class="prop-option" onclick="toggleProp(this,'Bellefleur Bagel No','-600')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-600</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Immediate Rematch Yes" data-bet-no="Immediate Rematch No"><div class="prop-number">PROP #10</div><div class="prop-title">Loser requests a rematch immediately after</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Immediate Rematch Yes','+175')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+175</span></div><div class="prop-option" onclick="toggleProp(this,'Immediate Rematch No','-210')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-210</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Victory Speech Yes" data-bet-no="Victory Speech No"><div class="prop-number">PROP #11</div><div class="prop-title">Winner delivers a victory speech unprompted</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Victory Speech Yes','+230')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-pos">+230</span></div><div class="prop-option" onclick="toggleProp(this,'Victory Speech No','-280')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-neg">-280</span></div></div></div>
+    <div class="prop-card" data-bet-yes="Loud Spectator Yes" data-bet-no="Loud Spectator No"><div class="prop-number">PROP #12</div><div class="prop-title">A spectator makes more noise than the players</div><div class="prop-options"><div class="prop-option" onclick="toggleProp(this,'Loud Spectator Yes','-120')"><span class="prop-option-name">Yes</span><span class="prop-option-odds odds-neg">-120</span></div><div class="prop-option" onclick="toggleProp(this,'Loud Spectator No','+100')"><span class="prop-option-name">No</span><span class="prop-option-odds odds-even">+100</span></div></div></div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Your Betslip</span><div class="section-line"></div><span class="section-tag" id="slipCountTag">0 Selections</span>
+  </div>
+  <div class="betslip" id="betslip">
+    <div class="betslip-header">
+      <span class="betslip-title">📋 Current Slip</span>
+      <span class="betslip-count" id="slipCount">No bets yet</span>
+    </div>
+    <div class="slip-items" id="slipItems"><div class="empty-slip">— No picks made —</div></div>
+    <div class="slip-footer" id="slipFooter" style="display:none;">
+      <span>Total Picks</span><span class="slip-total-val" id="slipTotalVal">0</span>
+    </div>
+    <button class="place-btn" id="placeBtn" disabled onclick="openConfirm()">Review &amp; Lock In Picks</button>
+  </div>
+
+  <div class="section-header" style="margin-top:52px;">
+    <span class="section-title">The Board</span>
+    <div class="section-line"></div>
+    <div class="lb-status"><div class="lb-dot" id="lbDot"></div><span id="lbCountTag">Loading...</span></div>
+  </div>
+  <div id="leaderboard"><div class="leaderboard-empty">Loading submissions...</div></div>
+
+  <div class="disclaimer">
+    ★ For entertainment purposes only · No real money · May the best pickler win ★<br>
+    All lines subject to change · Office Sports Network is not responsible for hurt feelings
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════
+//  CONFIG
+// ══════════════════════════════
+const MATCH_TIME      = new Date('2026-04-17T18:00:00');
+const ADMIN_PASSWORD  = 'pickle2026';
+const JSONBIN_KEY     = '$2a$10$dgjwE0AVw3Eee78Ys28LTeOzx5Qk30Rf0WRKSpt2fGzxYgUc/0bGC';
+const JSONBIN_BASE    = 'https://api.jsonbin.io/v3';
+// ── HARDCODE BIN IDs HERE once created (see instructions below) ──
+const HARDCODED_SLIPS_BIN   = null; // e.g. '6622abc123...'
+const HARDCODED_RESULTS_BIN = null; // e.g. '6622def456...'
+// These fall back to localStorage if not hardcoded
+let SLIPS_BIN_ID   = HARDCODED_SLIPS_BIN   || localStorage.getItem('pickle_slips_bin')   || null;
+let RESULTS_BIN_ID = HARDCODED_RESULTS_BIN || localStorage.getItem('pickle_results_bin') || null;
+
+// All bets: label → odds
+const ALL_BETS = {'Bellefleur to Win':'-130','Witt to Win':'+110','Bellefleur Wins Game 1':'-115','Witt Wins Game 1':'-105','Goes to Deciding Game':'+140','No Deciding Game':'-165','Over 33.5 Total Points':'-110','Under 33.5 Total Points':'-110','Game 1 Over 17.5':'-115','Game 1 Under 17.5':'-105','Game 1 Won by 4+':'-125','Game 1 Won by 1-3':'+105','Over 5.5 Aces':'+130','Under 5.5 Aces':'-155','5-Point Run Yes':'-175','5-Point Run No':'+145','Fist Pump Yes':'+115','Fist Pump No':'-135','Witt Knee Story Yes':'-200','Witt Knee Story No':'+165','Witt Score Dispute Yes':'-160','Witt Score Dispute No':'+135','Witt Butt Comment Yes':'+180','Witt Butt Comment No':'-220','Bellefleur Lines Quote Yes':'+250','Bellefleur Lines Quote No':'-310','Josh Kids These Days Yes':'-145','Josh Kids These Days No':'+120','Score Confusion Standoff Yes':'-130','Score Confusion Standoff No':'+110','GOATed Yes':'+200','GOATed No':'-250','Bellefleur Bagel Yes':'+400','Bellefleur Bagel No':'-600','Immediate Rematch Yes':'+175','Immediate Rematch No':'-210','Victory Speech Yes':'+230','Victory Speech No':'-280','Loud Spectator Yes':'-120','Loud Spectator No':'+100'};
+
+function oddsToPoints(o){const n=parseFloat(o);return Math.round((n>0?n/100:100/Math.abs(n))*100)/100;}
+function calcScore(slip,results){return Math.round(slip.picks.filter(p=>results[p.label]==='won').reduce((s,p)=>s+oddsToPoints(p.odds),0)*100)/100;}
+
+// ── STORAGE — JSONBin ──
+const JBIN_HEADERS = {'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY,'X-Bin-Private':'false'};
+
+async function createBin(name, data){
+  const r = await fetch(JSONBIN_BASE+'/b', {
+    method:'POST',
+    headers:{...JBIN_HEADERS,'X-Bin-Name':name},
+    body: JSON.stringify(data)
+  });
+  const j = await r.json();
+  return j.metadata.id;
+}
+
+async function readBin(binId){
+  const r = await fetch(JSONBIN_BASE+'/b/'+binId+'/latest', {headers:JBIN_HEADERS});
+  const j = await r.json();
+  return j.record;
+}
+
+async function writeBin(binId, data){
+  const r = await fetch(JSONBIN_BASE+'/b/'+binId, {
+    method:'PUT',
+    headers:JBIN_HEADERS,
+    body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+
+async function loadSlips(){
+  try{
+    if(!SLIPS_BIN_ID) return [];
+    return await readBin(SLIPS_BIN_ID);
+  }catch(e){console.error('loadSlips:',e);return [];}
+}
+
+async function saveSlip(slip){
+  try{
+    let slips = await loadSlips();
+    slips.push(slip);
+    if(!SLIPS_BIN_ID){
+      SLIPS_BIN_ID = await createBin('pickle-slips', slips);
+      localStorage.setItem('pickle_slips_bin', SLIPS_BIN_ID);
+      console.warn('SLIPS BIN CREATED — hardcode this ID: ' + SLIPS_BIN_ID);
+      showBanner('BIN CREATED: ' + SLIPS_BIN_ID + ' — see instructions', '#8e44ad');
+    } else {
+      await writeBin(SLIPS_BIN_ID, slips);
+    }
+    return slips;
+  }catch(e){console.error('saveSlip:',e);return null;}
+}
+
+async function loadResults(){
+  try{
+    if(!RESULTS_BIN_ID) return {};
+    return await readBin(RESULTS_BIN_ID);
+  }catch(e){console.error('loadResults:',e);return {};}
+}
+
+async function saveResults(res){
+  try{
+    if(!RESULTS_BIN_ID){
+      RESULTS_BIN_ID = await createBin('pickle-results', res);
+      localStorage.setItem('pickle_results_bin', RESULTS_BIN_ID);
+      console.warn('RESULTS BIN CREATED — hardcode this ID: ' + RESULTS_BIN_ID);
+    } else {
+      await writeBin(RESULTS_BIN_ID, res);
+    }
+    return true;
+  }catch(e){console.error('saveResults:',e);return false;}
+}
+
+async function syncBinIds(){
+  // Try to find existing bins by listing them
+  try{
+    const r = await fetch(JSONBIN_BASE+'/b', {headers:JBIN_HEADERS});
+    if(!r.ok) return;
+    const bins = await r.json();
+    for(const bin of bins){
+      if(bin.record && bin.record.name){
+        if(bin.record.name==='pickle-slips' && !SLIPS_BIN_ID){
+          SLIPS_BIN_ID = bin.record.id;
+          localStorage.setItem('pickle_slips_bin', SLIPS_BIN_ID);
+        }
+        if(bin.record.name==='pickle-results' && !RESULTS_BIN_ID){
+          RESULTS_BIN_ID = bin.record.id;
+          localStorage.setItem('pickle_results_bin', RESULTS_BIN_ID);
+        }
+      }
+    }
+  }catch(e){}
+}
+
+// ── STATE ──
+let bettorName='', picks={}, pickIdCounter=0, lastSlipCount=0, lastResultsHash='', adminDraft={};
+
+// ── COUNTDOWN ──
+function updateCountdown(){
+  const diff=MATCH_TIME-new Date(), el=document.getElementById('countdown');
+  if(diff<=0){el.innerHTML='<span style="letter-spacing:4px">MATCH TIME</span>';el.classList.add('urgent');return;}
+  if(diff<3600000)el.classList.add('urgent');
+  const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),s=Math.floor(diff%60000/1000);
+  el.innerHTML=(d>0?d+'<span>d</span> ':'')+String(h).padStart(2,'0')+'<span>h</span> '+String(m).padStart(2,'0')+'<span>m</span> '+String(s).padStart(2,'0')+'<span>s</span>';
+}
+updateCountdown(); setInterval(updateCountdown,1000);
+
+// ── APPLY RESULTS TO BOARD UI ──
+function applyResultsToUI(results){
+  document.querySelectorAll('#matchLinesTable tbody tr[data-bet]').forEach(tr=>{
+    const bet=tr.dataset.bet; tr.classList.remove('result-won','result-lost');
+    tr.querySelectorAll('.result-badge').forEach(b=>b.remove());
+    if(!results[bet])return;
+    tr.classList.add('result-'+results[bet]);
+    const lbl=tr.querySelector('.bet-label'); if(!lbl)return;
+    const b=document.createElement('span'); b.className='result-badge '+results[bet];
+    b.textContent=results[bet]==='won'?'WON':'LOST'; lbl.appendChild(b);
+  });
+  document.querySelectorAll('#propsGrid .prop-card').forEach(card=>{
+    const yes=card.dataset.betYes, no=card.dataset.betNo;
+    card.classList.remove('result-won','result-lost');
+    const opts=card.querySelectorAll('.prop-option');
+    opts.forEach(o=>o.classList.remove('winner','loser'));
+    if(results[yes]==='won'){card.classList.add('result-won');opts[0]&&opts[0].classList.add('winner');opts[1]&&opts[1].classList.add('loser');}
+    else if(results[no]==='won'){card.classList.add('result-won');opts[1]&&opts[1].classList.add('winner');opts[0]&&opts[0].classList.add('loser');}
+    else if(results[yes]==='lost'||results[no]==='lost')card.classList.add('result-lost');
+  });
+}
+
+// ── NAME GATE ──
+function openNameGate(sub){
+  const g=document.getElementById('nameGate');
+  document.getElementById('gateSub').textContent=sub||'Enter your name to open the board';
+  g.classList.remove('hidden'); document.getElementById('nameInput').value=''; document.getElementById('nameError').textContent='';
+  setTimeout(()=>document.getElementById('nameInput').focus(),100);
+}
+function closeNameGate(name){bettorName=name;document.getElementById('nameGate').classList.add('hidden');document.getElementById('bettorNameDisplay').textContent=name;}
+document.getElementById('nameSubmit').addEventListener('click',submitName);
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitName();});
+document.getElementById('changeNameBtn').addEventListener('click',()=>openNameGate('Switching bettor — enter new name'));
+function submitName(){const v=document.getElementById('nameInput').value.trim(),e=document.getElementById('nameError');if(!v||v.length<2){e.textContent='Enter at least 2 characters.';return;}e.textContent='';closeNameGate(v);}
+
+// ── PICK LOGIC ──
+function clearGroup(g,except){document.querySelectorAll('.pick-btn[data-group="'+g+'"]').forEach(b=>{if(b===except)return;const e=b.dataset.pickId;if(e&&picks[e]){delete picks[e];delete b.dataset.pickId;}b.classList.remove('picked');b.textContent='Pick';});}
+function togglePick(btn,label,odds){
+  const g=btn.dataset.group,eid=btn.dataset.pickId;
+  if(eid&&picks[eid]){delete picks[eid];delete btn.dataset.pickId;btn.classList.remove('picked');btn.textContent='Pick';}
+  else{if(g)clearGroup(g,btn);const id='p'+(pickIdCounter++);btn.dataset.pickId=id;picks[id]={label,odds,btn,el:null};btn.classList.add('picked');btn.textContent='Picked \u2713';}
+  renderSlip();nudgeToSlip();
+}
+function toggleProp(el,label,odds){
+  const card=el.closest('.prop-card');
+  card.querySelectorAll('.prop-option').forEach(s=>{if(s===el)return;const sid=s.dataset.pickId;if(sid&&picks[sid]){delete picks[sid];delete s.dataset.pickId;}s.classList.remove('picked');});
+  const was=el.classList.contains('picked');
+  if(was){const e=el.dataset.pickId;if(e&&picks[e]){delete picks[e];delete el.dataset.pickId;}el.classList.remove('picked');}
+  else{const id='p'+(pickIdCounter++);el.dataset.pickId=id;picks[id]={label,odds,btn:null,el};el.classList.add('picked');}
+  renderSlip();nudgeToSlip();
+}
+function removePick(id){const p=picks[id];if(!p)return;if(p.btn){p.btn.classList.remove('picked');p.btn.textContent='Pick';delete p.btn.dataset.pickId;}if(p.el){p.el.classList.remove('picked');delete p.el.dataset.pickId;}delete picks[id];renderSlip();}
+
+// ── NUDGE ──
+let nudgeTimer=null;
+function nudgeToSlip(){if(nudgeTimer)return;if(document.getElementById('betslip').getBoundingClientRect().top<=window.innerHeight)return;const ex=document.getElementById('slipNudge');if(ex)return;const n=document.createElement('div');n.id='slipNudge';n.style.cssText='text-align:center;font-size:11px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-top:10px;cursor:pointer;transition:color .15s;';n.textContent='\u2193 scroll down to review your slip';n.onmouseenter=()=>n.style.color='var(--gold)';n.onmouseleave=()=>n.style.color='#555';n.onclick=()=>{document.getElementById('betslip').scrollIntoView({behavior:'smooth'});n.remove();};document.getElementById('slipCountTag').after(n);nudgeTimer=setTimeout(()=>{n.remove();nudgeTimer=null;},5000);}
+
+// ── RENDER SLIP ──
+function renderSlip(){
+  const c=document.getElementById('slipItems'),f=document.getElementById('slipFooter'),tv=document.getElementById('slipTotalVal'),sc=document.getElementById('slipCount'),st=document.getElementById('slipCountTag'),pb=document.getElementById('placeBtn');
+  const keys=Object.keys(picks); c.innerHTML='';
+  if(!keys.length){c.innerHTML='<div class="empty-slip">\u2014 No picks made \u2014</div>';f.style.display='none';sc.textContent='No bets yet';st.textContent='0 Selections';pb.disabled=true;return;}
+  keys.forEach(id=>{const p=picks[id],d=document.createElement('div');d.className='slip-item';
+    const ne=document.createElement('span');ne.className='slip-item-name';ne.textContent=p.label;
+    const pe=document.createElement('span');pe.className='slip-item-pts';pe.textContent=oddsToPoints(p.odds)+'pt';
+    const oe=document.createElement('span');oe.className='slip-item-odds '+(p.odds.startsWith('+')?'odds-pos':'odds-neg');oe.textContent=p.odds;
+    const rb=document.createElement('button');rb.className='slip-remove';rb.textContent='\u2715';rb.addEventListener('click',()=>removePick(id));
+    d.appendChild(ne);d.appendChild(pe);d.appendChild(oe);d.appendChild(rb);c.appendChild(d);});
+  f.style.display='flex';const n=keys.length;tv.textContent=n+' Pick'+(n!==1?'s':'');sc.textContent=n+' selection'+(n!==1?'s':'');st.textContent=n+' Selection'+(n!==1?'s':'');pb.disabled=false;
+}
+
+// ── CONFIRM ──
+function openConfirm(){
+  const keys=Object.keys(picks);if(!keys.length)return;const n=keys.length;
+  document.getElementById('confirmMeta').innerHTML='<strong>'+bettorName+'</strong> &nbsp;&middot;&nbsp; '+n+' pick'+(n!==1?'s':'');
+  const pe=document.getElementById('confirmPicks');pe.innerHTML='';
+  keys.forEach(id=>{const p=picks[id],row=document.createElement('div');row.className='confirm-pick-row';
+    const ne=document.createElement('span');ne.className='confirm-pick-name';ne.textContent=p.label;
+    const right=document.createElement('div');right.className='confirm-pick-right';
+    const pts=document.createElement('span');pts.className='confirm-pick-pts';pts.textContent=oddsToPoints(p.odds)+'pt';
+    const oe=document.createElement('span');oe.className='confirm-pick-odds '+(p.odds.startsWith('+')?'odds-pos':'odds-neg');oe.textContent=p.odds;
+    right.appendChild(pts);right.appendChild(oe);row.appendChild(ne);row.appendChild(right);pe.appendChild(row);});
+  document.getElementById('confirmScreen').classList.remove('hidden');
+}
+document.getElementById('confirmBack').addEventListener('click',()=>document.getElementById('confirmScreen').classList.add('hidden'));
+document.getElementById('confirmSubmit').addEventListener('click',async()=>{
+  const btn=document.getElementById('confirmSubmit');btn.disabled=true;btn.textContent='Saving...';
+  const keys=Object.keys(picks);
+  const slip={name:bettorName,picks:keys.map(id=>({label:picks[id].label,odds:picks[id].odds})),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),ts:Date.now()};
+  const allSlips=await saveSlip(slip);
+  btn.disabled=false;btn.textContent='Lock In Picks';
+  document.getElementById('confirmScreen').classList.add('hidden');
+  keys.forEach(id=>{const p=picks[id];if(p.btn){p.btn.classList.remove('picked');p.btn.textContent='Pick';delete p.btn.dataset.pickId;}if(p.el){p.el.classList.remove('picked');delete p.el.dataset.pickId;}delete picks[id];});
+  renderSlip();
+  const results=await loadResults();
+  if(allSlips)renderLeaderboard(allSlips,results,slip.ts);
+  showBanner('\uD83C\uDFD3 '+slip.name.toUpperCase()+' \u2014 '+slip.picks.length+' PICK'+(slip.picks.length!==1?'S':'')+' LOCKED IN',var_green());
+  setTimeout(()=>openNameGate('Next bettor \u2014 enter your name'),3600);
+});
+
+function var_green(){return '#27ae60';}
+
+// ── BANNER ──
+function showBanner(msg,bg){
+  const ex=document.querySelector('.success-banner');if(ex)ex.remove();
+  const b=document.createElement('div');b.className='success-banner';b.style.background=bg||'var(--green)';b.textContent=msg;
+  document.body.appendChild(b);
+  setTimeout(()=>{b.style.transition='opacity .5s';b.style.opacity='0';setTimeout(()=>b.remove(),500);},3200);
+}
+
+// ── LEADERBOARD ──
+function renderLeaderboard(slips,results,newTs){
+  const el=document.getElementById('leaderboard'),dot=document.getElementById('lbDot'),ct=document.getElementById('lbCountTag');
+  dot.classList.remove('stale');ct.textContent=slips.length+' Submitted';
+  const hasResults=Object.keys(results).length>0;
+  if(!slips.length){el.innerHTML='<div class="leaderboard-empty">No slips submitted yet \u2014 be the first</div>';return;}
+  const scored=slips.map(s=>({...s,score:calcScore(s,results)}));
+  scored.sort((a,b)=>hasResults?b.score-a.score:b.picks.length-a.picks.length);
+  const table=document.createElement('table');table.className='leaderboard-table';
+  table.innerHTML='<thead><tr><th>#</th><th>Bettor</th><th style="text-align:right;padding-right:16px;">'+(hasResults?'Score':'Picks')+'</th></tr></thead>';
+  const tbody=document.createElement('tbody');
+  scored.forEach((slip,i)=>{
+    const tr=document.createElement('tr');if(slip.ts===newTs)tr.className='lb-new';
+    const rk=document.createElement('td');rk.className='lb-rank'+(i===0?' r1':i===1?' r2':i===2?' r3':'');rk.textContent=i+1;
+    const nt=document.createElement('td');
+    const nd=document.createElement('div');nd.className='lb-name';nd.textContent=slip.name;
+    const td2=document.createElement('div');td2.className='lb-time';td2.textContent='Submitted '+slip.time;
+    const pd=document.createElement('div');pd.className='lb-picks-list';pd.textContent=slip.picks.map(p=>p.label).join(' \u00b7 ');
+    nt.appendChild(nd);nt.appendChild(td2);nt.appendChild(pd);
+    const sc=document.createElement('td');sc.className='lb-score-col';
+    const sv=document.createElement('div');sv.className='lb-score';sv.textContent=hasResults?slip.score.toFixed(2):slip.picks.length;
+    const sl=document.createElement('div');sl.className='lb-score-label';sl.textContent=hasResults?'pts':'picks';
+    sc.appendChild(sv);sc.appendChild(sl);
+    tr.appendChild(rk);tr.appendChild(nt);tr.appendChild(sc);tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);el.innerHTML='';el.appendChild(table);
+  lastSlipCount=slips.length;lastResultsHash=JSON.stringify(results);
+}
+
+// ── ADMIN ──
+document.getElementById('adminTrigger').addEventListener('click', function(){
+  document.getElementById('adminPwInput').value='';
+  document.getElementById('adminPwError').textContent='';
+  document.getElementById('adminGate').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('adminPwInput').focus(),100);
+});
+document.getElementById('adminPwSubmit').addEventListener('click', submitAdminPw);
+document.getElementById('adminPwInput').addEventListener('keydown', function(e){ if(e.key==='Enter') submitAdminPw(); });
+async function submitAdminPw(){
+  const pw=document.getElementById('adminPwInput').value;
+  const err=document.getElementById('adminPwError');
+  if(pw!==ADMIN_PASSWORD){err.textContent='Incorrect password.';return;}
+  document.getElementById('adminGate').classList.add('hidden');
+  const results=await loadResults();adminDraft={...results};renderAdminPanel(results);
+  document.getElementById('adminPanel').classList.remove('hidden');
+}
+function renderAdminPanel(results){
+  const list=document.getElementById('adminBetList');list.innerHTML='';
+  const sections=[
+    {title:'Match Lines',bets:['Bellefleur to Win','Witt to Win','Bellefleur Wins Game 1','Witt Wins Game 1','Goes to Deciding Game','No Deciding Game','Over 33.5 Total Points','Under 33.5 Total Points','Game 1 Over 17.5','Game 1 Under 17.5','Game 1 Won by 4+','Game 1 Won by 1-3','Over 5.5 Aces','Under 5.5 Aces','5-Point Run Yes','5-Point Run No']},
+    {title:'Props',bets:['Fist Pump Yes','Fist Pump No','Witt Knee Story Yes','Witt Knee Story No','Witt Score Dispute Yes','Witt Score Dispute No','Witt Butt Comment Yes','Witt Butt Comment No','Bellefleur Lines Quote Yes','Bellefleur Lines Quote No','Josh Kids These Days Yes','Josh Kids These Days No','Score Confusion Standoff Yes','Score Confusion Standoff No','GOATed Yes','GOATed No','Bellefleur Bagel Yes','Bellefleur Bagel No','Immediate Rematch Yes','Immediate Rematch No','Victory Speech Yes','Victory Speech No','Loud Spectator Yes','Loud Spectator No']}
+  ];
+  sections.forEach(sec=>{
+    const h=document.createElement('div');h.className='admin-section-label';h.textContent=sec.title;list.appendChild(h);
+    sec.bets.forEach(label=>{
+      const odds=ALL_BETS[label];if(!odds)return;
+      const row=document.createElement('div');row.className='admin-bet-row';
+      const lbl=document.createElement('div');lbl.className='admin-bet-name';lbl.textContent=label;
+      const pts=document.createElement('div');pts.className='admin-bet-pts';pts.textContent=oddsToPoints(odds)+'pt';
+      const togs=document.createElement('div');togs.className='admin-toggles';
+      const won=document.createElement('button');won.className='admin-tog'+(adminDraft[label]==='won'?' won':'');won.textContent='Won';
+      const lost=document.createElement('button');lost.className='admin-tog'+(adminDraft[label]==='lost'?' lost':'');lost.textContent='Lost';
+      const clr=document.createElement('button');clr.className='admin-tog';clr.textContent='Clear';
+      won.addEventListener('click',()=>{adminDraft[label]='won';won.className='admin-tog won';lost.className='admin-tog';});
+      lost.addEventListener('click',()=>{adminDraft[label]='lost';won.className='admin-tog';lost.className='admin-tog lost';});
+      clr.addEventListener('click',()=>{delete adminDraft[label];won.className='admin-tog';lost.className='admin-tog';});
+      togs.appendChild(won);togs.appendChild(lost);togs.appendChild(clr);
+      row.appendChild(lbl);row.appendChild(pts);row.appendChild(togs);list.appendChild(row);
+    });
+  });
+}
+document.getElementById('adminClose').addEventListener('click',()=>document.getElementById('adminPanel').classList.add('hidden'));
+document.getElementById('adminSave').addEventListener('click',async()=>{
+  const btn=document.getElementById('adminSave');btn.disabled=true;btn.textContent='Saving...';
+  const ok=await saveResults(adminDraft);btn.disabled=false;btn.textContent='Save & Push Results';
+  if(!ok){alert('Save failed.');return;}
+  document.getElementById('adminPanel').classList.add('hidden');
+  const [slips,results]=await Promise.all([loadSlips(),loadResults()]);
+  applyResultsToUI(results);renderLeaderboard(slips,results);
+  showBanner('\u26a1 Results updated \u2014 scores recalculated','#c0392b');
+});
+
+// ── POLL ──
+async function poll(){
+  try{
+    const [slips,results]=await Promise.all([loadSlips(),loadResults()]);
+    document.getElementById('lbDot').classList.remove('stale');
+    const rh=JSON.stringify(results);
+    if(slips.length!==lastSlipCount||rh!==lastResultsHash){applyResultsToUI(results);renderLeaderboard(slips,results);}
+  }catch{document.getElementById('lbDot').classList.add('stale');}
+}
+
+// ── INIT ──
+async function init(){
+  try{
+    await syncBinIds();
+    const [slips,results]=await Promise.all([loadSlips(),loadResults()]);
+    applyResultsToUI(results);renderLeaderboard(slips,results);
+  }catch(e){
+    document.getElementById('leaderboard').innerHTML='<div class="leaderboard-empty">No slips submitted yet \u2014 be the first</div>';
+    document.getElementById('lbCountTag').textContent='0 Submitted';
+    document.getElementById('lbDot').classList.add('stale');
+  }
+  setInterval(poll,15000);
+}
+init();
+</script>
+</body>
+</html>
